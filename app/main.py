@@ -4,7 +4,21 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel
 from codecs import decode
 
-app = FastAPI()
+tags_metadata = [
+    {
+        "name": "encode",
+        "description": "Set massage and keyword. Function return encoded cipher."
+    },
+    {
+        "name": "decode",
+        "description": "Set cipher and keyword. Function return decoded massage."
+    }
+]
+
+
+app = FastAPI(title="Enigma",
+              description="Encode and decode message using One-Time Pad Cipher",
+              openapi_tags=tags_metadata)
 
 security = HTTPBasic()
 
@@ -12,7 +26,7 @@ security = HTTPBasic()
 class Enigma(BaseModel):
     # ASCII between 32 and 126
     def encode(self, message, key):
-        cipher = ''
+        cipher = ""
         letter_in_message = 0
         while letter_in_message < len(message):
             for letter_in_key in key:
@@ -25,7 +39,7 @@ class Enigma(BaseModel):
         return cipher
 
     def decode(self, cipher, key):
-        message = ''
+        message = ""
         letter_in_cipher = 0
 
         while letter_in_cipher < len(cipher):
@@ -40,8 +54,8 @@ class Enigma(BaseModel):
 
 
 def authorization(credentials):
-    correct_username = 'username'
-    correct_password = 'password'
+    correct_username = username
+    correct_password = "password"
     if not (correct_username == credentials.username and correct_password == credentials.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -50,20 +64,20 @@ def authorization(credentials):
         )
 
 
-@app.post('/encode')
+@app.post("/encode", tags=["encode"])
 def encode_message(message, key, credentials: HTTPBasicCredentials = Depends(security)):
     authorization(credentials)
     enigma = Enigma()
     return enigma.encode(message, key)
 
 
-@app.post('/decode')
+@app.post("/decode", tags=["decode"])
 def encode_message(cipher, key, credentials: HTTPBasicCredentials = Depends(security)):
     authorization(credentials)
-    cipher = decode(cipher, 'unicode_escape')
+    cipher = decode(cipher, "unicode_escape")
     enigma = Enigma()
     return enigma.decode(cipher, key)
 
 
-if __name__ == '__main__':
-    uvicorn.run(app, port=8000, host='0.0.0.0')
+if __name__ == "__main__":
+    uvicorn.run(app, port=8000, host="0.0.0.0")
